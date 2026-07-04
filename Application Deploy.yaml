@@ -1,0 +1,18 @@
+stages:
+- stage: Deploy 
+Jobs:
+- deployment: DeployToVM
+  displayName: Deploy to VM
+  environment: "DevOps Environment"
+  strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+
+          - script: |
+              echo "Hello from Azure DevOps VM!"
+              username
+              pwd
+              ls -la
+            displayName: "Verify Deployment"
