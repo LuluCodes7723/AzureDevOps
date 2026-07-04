@@ -1,6 +1,6 @@
 stages:
 - stage: Deploy 
-Jobs:
+jobs:
 - deployment: DeployToVM
   displayName: Deploy to VM
   environment: "DevOps Environment"
