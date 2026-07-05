@@ -1,5 +1,12 @@
-- bash: |
-    set -e
+trigger:
+  - none                        # or 'main' / your branch name
+
+pool:
+  vmImage: ubuntu-latest        # or your self-hosted agent pool name
+
+steps:
+  - bash: |
+      set -e
 
     echo "Installing prerequisites..."
     sudo apt-get update -y
