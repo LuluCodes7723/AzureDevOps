@@ -1,8 +1,8 @@
 trigger: none
 
 pool:
-  name: Default   # Replace with your self-hosted agent pool
-
+  vmImage: ubuntu-latest
+  
 stages:
 - stage: Deploy
   displayName: Install Jenkins
