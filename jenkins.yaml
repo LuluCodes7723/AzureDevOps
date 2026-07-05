@@ -1,58 +1,44 @@
-trigger: none
+- bash: |
+    set -e
+    echo "Updating packages..."
+    sudo apt-get update
 
-stages:
-- stage: InstallJenkins
-  displayName: Install Jenkins
+    echo "Installing prerequisites..."
+    sudo apt-get install -y curl wget gnupg ca-certificates openjdk-17-jdk
 
-  jobs:
-  - deployment: InstallJenkins
-    displayName: Install Jenkins on Ubuntu 24.04
-    environment: "DevOps Environment"
+    echo "Removing old Jenkins repository (if any)..."
+    sudo rm -f /etc/apt/sources.list.d/jenkins.list
+    sudo rm -f /usr/share/keyrings/jenkins-keyring.gpg
 
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
+    echo "Downloading Jenkins GPG key to temp file..."
+    curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key \
+      -o /tmp/jenkins.io.key
 
-          - bash: |
-              set -euxo pipefail
+    echo "Dearmoring GPG key..."
+    sudo gpg --batch --yes --dearmor \
+      -o /usr/share/keyrings/jenkins-keyring.gpg \
+      /tmp/jenkins.io.key
 
-              echo "===== OS ====="
-              cat /etc/os-release
+    rm -f /tmp/jenkins.io.key
 
-              echo "===== Update ====="
-              sudo apt update
+    echo "Adding Jenkins repository..."
+    echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] \
+      https://pkg.jenkins.io/debian-stable binary/" \
+      | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 
-              echo "===== Install Prerequisites ====="
-              sudo apt install -y openjdk-21-jdk curl gnupg
+    echo "Updating package list..."
+    sudo apt-get update
 
-              echo "===== Add Jenkins GPG Key ====="
-              curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | \
-                sudo gpg --dearmor -o /usr/share/keyrings/jenkins-keyring.gpg
+    echo "Installing Jenkins..."
+    sudo apt-get install -y jenkins
 
-              echo "===== Add Jenkins Repository ====="
-              echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] https://pkg.jenkins.io/debian-stable binary/" | \
-                sudo tee /etc/apt/sources.list.d/jenkins.list
+    echo "Starting Jenkins..."
+    sudo systemctl enable jenkins
+    sudo systemctl start jenkins
 
-              echo "===== Refresh Package Index ====="
-              sudo apt update
+    echo "Jenkins Status..."
+    sudo systemctl status jenkins --no-pager
 
-              echo "===== Verify Repository ====="
-              apt-cache policy jenkins
-
-              echo "===== Install Jenkins ====="
-              sudo apt install -y jenkins
-
-              echo "===== Enable Jenkins ====="
-              sudo systemctl daemon-reload
-              sudo systemctl enable jenkins
-              sudo systemctl start jenkins
-
-              echo "===== Jenkins Status ====="
-              sudo systemctl status jenkins --no-pager
-
-              echo "===== Initial Admin Password ====="
-              sudo cat /var/lib/jenkins/secrets/initialAdminPassword
-
-            displayName: "Install Jenkins2"
+    echo "Initial Admin Password:"
+    sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+  displayName: "Install Jenkins2"
