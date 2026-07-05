@@ -59,6 +59,3 @@ stages:
               sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
             displayName: "Install Jenkins"
-
-             
-            displayName: "Install Jenkins"
