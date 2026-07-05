@@ -1,57 +1,64 @@
 trigger: none
 
 pool:
-  vmImage: ubuntu-latest
-  
+  name: Linux (ubuntu 24.04)
+
 stages:
-- stage: Deploy
+- stage: InstallJenkins
   displayName: Install Jenkins
 
   jobs:
   - deployment: InstallJenkins
-    displayName: Install Jenkins on Linux VM
+    displayName: Install Jenkins on Ubuntu 24.04
     environment: "DevOps Environment"
 
     strategy:
       runOnce:
         deploy:
           steps:
-
           - checkout: self
 
-          - script: |
-              echo "Updating packages..."
-              sudo apt-get update -y
+          - bash: |
+              set -euxo pipefail
 
-              echo "Installing Java..."
-              sudo apt-get install -y fontconfig openjdk-17-jdk
+              echo "===== OS ====="
+              cat /etc/os-release
 
-              java -version
+              echo "===== Update ====="
+              sudo apt update
 
-              echo "Adding Jenkins repository..."
-              curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee \
-              /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+              echo "===== Install Prerequisites ====="
+              sudo apt install -y openjdk-21-jdk curl gnupg
 
-              echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
-              https://pkg.jenkins.io/debian-stable binary/" | sudo tee \
-              /etc/apt/sources.list.d/jenkins.list > /dev/null
+              echo "===== Add Jenkins GPG Key ====="
+              curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | \
+                sudo gpg --dearmor -o /usr/share/keyrings/jenkins-keyring.gpg
 
-              sudo apt-get update -y
+              echo "===== Add Jenkins Repository ====="
+              echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] https://pkg.jenkins.io/debian-stable binary/" | \
+                sudo tee /etc/apt/sources.list.d/jenkins.list
 
-              echo "Installing Jenkins..."
-              sudo apt-get install -y jenkins
+              echo "===== Refresh Package Index ====="
+              sudo apt update
 
-              echo "Starting Jenkins..."
+              echo "===== Verify Repository ====="
+              apt-cache policy jenkins
+
+              echo "===== Install Jenkins ====="
+              sudo apt install -y jenkins
+
+              echo "===== Enable Jenkins ====="
+              sudo systemctl daemon-reload
               sudo systemctl enable jenkins
               sudo systemctl start jenkins
 
-              echo "Checking Jenkins Status..."
+              echo "===== Jenkins Status ====="
               sudo systemctl status jenkins --no-pager
 
-              echo "Jenkins Version:"
-              jenkins --version || true
-
-              echo "Initial Admin Password:"
+              echo "===== Initial Admin Password ====="
               sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
+            displayName: "Install Jenkins"
+
+             
             displayName: "Install Jenkins"
