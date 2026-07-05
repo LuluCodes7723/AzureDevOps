@@ -1,8 +1,5 @@
 trigger: none
 
-pool:
-  name: ubuntu 24.04
-
 stages:
 - stage: InstallJenkins
   displayName: Install Jenkins
