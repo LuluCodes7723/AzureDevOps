@@ -1,25 +1,24 @@
 - bash: |
     set -e
-    echo "Updating packages..."
-    sudo apt-get update
 
     echo "Installing prerequisites..."
-    sudo apt-get install -y curl wget gnupg ca-certificates openjdk-17-jdk
+    sudo apt-get update -y
+    sudo apt-get install -y curl gnupg ca-certificates openjdk-17-jdk
 
-    echo "Removing old Jenkins repository (if any)..."
+    echo "Removing any old Jenkins repo and keys..."
     sudo rm -f /etc/apt/sources.list.d/jenkins.list
     sudo rm -f /usr/share/keyrings/jenkins-keyring.gpg
+    sudo rm -f /usr/share/keyrings/jenkins-keyring.asc
 
-    echo "Downloading Jenkins GPG key to temp file..."
-    curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key \
-      -o /tmp/jenkins.io.key
+    echo "Fetching Jenkins GPG key from keyserver..."
+    sudo gpg --batch --yes \
+      --keyserver hkp://keyserver.ubuntu.com:80 \
+      --recv-keys 5BA31D57EF5975CA
 
-    echo "Dearmoring GPG key..."
-    sudo gpg --batch --yes --dearmor \
-      -o /usr/share/keyrings/jenkins-keyring.gpg \
-      /tmp/jenkins.io.key
-
-    rm -f /tmp/jenkins.io.key
+    echo "Exporting key to apt keyring..."
+    sudo gpg --batch --yes \
+      --export 5BA31D57EF5975CA \
+      | sudo tee /usr/share/keyrings/jenkins-keyring.gpg > /dev/null
 
     echo "Adding Jenkins repository..."
     echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] \
@@ -27,18 +26,19 @@
       | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 
     echo "Updating package list..."
-    sudo apt-get update
+    sudo apt-get update -y
 
     echo "Installing Jenkins..."
     sudo apt-get install -y jenkins
 
-    echo "Starting Jenkins..."
+    echo "Enabling and starting Jenkins..."
     sudo systemctl enable jenkins
     sudo systemctl start jenkins
 
-    echo "Jenkins Status..."
+    echo "Jenkins Status:"
     sudo systemctl status jenkins --no-pager
 
     echo "Initial Admin Password:"
     sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
   displayName: "Install Jenkins2"
