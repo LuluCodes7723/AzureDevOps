@@ -2,7 +2,7 @@ trigger:
   - none                        # or 'main' / your branch name
 
 pool:
-  vmImage: Linux (ubuntu 24.04)      # or your self-hosted agent pool name
+  vmImage: ubuntu 24.04      # or your self-hosted agent pool name
 
 steps:
   - bash: |
