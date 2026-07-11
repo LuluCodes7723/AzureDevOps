@@ -8,27 +8,33 @@ steps:
   - bash: |
       set -e
 
-      echo "=== Update packages ==="
+      echo "=== Update & Install dependencies ==="
       sudo apt-get update -y
+      sudo apt-get install -y curl gnupg2 fontconfig openjdk-17-jdk
 
-      echo "=== Install Java ==="
-      sudo apt-get install -y fontconfig openjdk-17-jdk
+      echo "=== Java version ==="
       java -version
 
-      echo "=== Clean old Jenkins entries ==="
+      echo "=== Remove ALL old Jenkins entries ==="
       sudo rm -f /etc/apt/sources.list.d/jenkins.list
+      sudo rm -f /usr/share/keyrings/jenkins-keyring.asc
       sudo rm -f /usr/share/keyrings/jenkins-keyring.gpg
 
-      echo "=== Add Jenkins key using official method ==="
-      sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
-        https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+      echo "=== Import correct Jenkins key directly ==="
+      curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key \
+        | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+
+      echo "=== Verify key fingerprint ==="
+      gpg --no-default-keyring \
+        --keyring /usr/share/keyrings/jenkins-keyring.asc \
+        --fingerprint || true
 
       echo "=== Add Jenkins repo ==="
-      echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]" \
-        "https://pkg.jenkins.io/debian-stable binary/" | \
+      echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+        https://pkg.jenkins.io/debian-stable binary/" | \
         sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 
-      echo "=== Update apt ==="
+      echo "=== apt update ==="
       sudo apt-get update -y
 
       echo "=== Install Jenkins ==="
@@ -37,7 +43,9 @@ steps:
       echo "=== Start Jenkins ==="
       sudo systemctl enable jenkins
       sudo systemctl start jenkins
-      sleep 10
+      sleep 15
+
+      echo "=== Status ==="
       sudo systemctl status jenkins --no-pager
 
       echo "=== Admin Password ==="
