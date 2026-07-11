@@ -2,50 +2,47 @@ trigger:
   - none                        # or 'main' / your branch name
 
 pool:
-  vmImage: ubuntu-latest        # or your self-hosted agent pool name
+  vmImage: Linux (ubuntu 24.04)      # or your self-hosted agent pool name
 
 steps:
   - bash: |
       set -e
 
-    echo "Installing prerequisites..."
-    sudo apt-get update -y
-    sudo apt-get install -y curl gnupg ca-certificates openjdk-17-jdk
+      echo "Updating packages..."
+      sudo apt-get update -y
 
-    echo "Removing any old Jenkins repo and keys..."
-    sudo rm -f /etc/apt/sources.list.d/jenkins.list
-    sudo rm -f /usr/share/keyrings/jenkins-keyring.gpg
-    sudo rm -f /usr/share/keyrings/jenkins-keyring.asc
+      echo "Installing Java..."
+      sudo apt-get install -y fontconfig openjdk-17-jdk
 
-    echo "Fetching Jenkins GPG key from keyserver..."
-    sudo gpg --batch --yes \
-      --keyserver hkp://keyserver.ubuntu.com:80 \
-      --recv-keys 5BA31D57EF5975CA
+      echo "Removing old Jenkins keys/repos..."
+      sudo rm -f /etc/apt/sources.list.d/jenkins.list
+      sudo rm -f /usr/share/keyrings/jenkins-keyring.gpg
 
-    echo "Exporting key to apt keyring..."
-    sudo gpg --batch --yes \
-      --export 5BA31D57EF5975CA \
-      | sudo tee /usr/share/keyrings/jenkins-keyring.gpg > /dev/null
+      echo "Downloading Jenkins GPG key..."
+      curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key \
+        -o /tmp/jenkins.key
 
-    echo "Adding Jenkins repository..."
-    echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] \
-      https://pkg.jenkins.io/debian-stable binary/" \
-      | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+      echo "Installing GPG key..."
+      sudo gpg --batch --yes \
+        --dearmor -o /usr/share/keyrings/jenkins-keyring.gpg \
+        /tmp/jenkins.key
+      sudo rm -f /tmp/jenkins.key
 
-    echo "Updating package list..."
-    sudo apt-get update -y
+      echo "Adding Jenkins repo..."
+      echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] \
+        https://pkg.jenkins.io/debian-stable binary/" \
+        | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 
-    echo "Installing Jenkins..."
-    sudo apt-get install -y jenkins
+      echo "Installing Jenkins..."
+      sudo apt-get update -y
+      sudo apt-get install -y jenkins
 
-    echo "Enabling and starting Jenkins..."
-    sudo systemctl enable jenkins
-    sudo systemctl start jenkins
+      echo "Starting Jenkins..."
+      sudo systemctl enable jenkins
+      sudo systemctl start jenkins
+      sudo systemctl status jenkins --no-pager
 
-    echo "Jenkins Status:"
-    sudo systemctl status jenkins --no-pager
+      echo "Admin Password:"
+      sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
-    echo "Initial Admin Password:"
-    sudo cat /var/lib/jenkins/secrets/initialAdminPassword
-
-  displayName: "Install Jenkins2"
+    displayName: "Install Jenkins"
