@@ -1,0 +1,63 @@
+trigger:
+  - none
+
+pool:
+  vmImage: ubuntu-latest   
+
+variables:
+  TERRAFORM_VERSION: '1.8.5'  
+
+steps:
+  - bash: |
+      set -e
+
+      echo "=== Step 1: Update packages ==="
+      sudo apt-get update -y
+
+      echo "=== Step 2: Install dependencies ==="
+      sudo apt-get install -y \
+        curl \
+        wget \
+        unzip \
+        gnupg \
+        software-properties-common \
+        apt-transport-https \
+        ca-certificates
+
+      echo "=== Step 3: Remove any old Terraform/HashiCorp entries ==="
+      sudo rm -f /etc/apt/sources.list.d/hashicorp.list
+      sudo rm -f /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+      echo "=== Step 4: Add HashiCorp GPG key ==="
+      wget -O /tmp/hashicorp.asc \
+        https://apt.releases.hashicorp.com/gpg
+      sudo gpg --batch --yes \
+        --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg \
+        /tmp/hashicorp.asc
+      sudo rm -f /tmp/hashicorp.asc
+
+      echo "=== Step 5: Add HashiCorp repository ==="
+      echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+        https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
+        sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
+
+      echo "=== Step 6: Update apt and install Terraform ==="
+      sudo apt-get update -y
+      sudo apt-get install -y terraform=$(TERRAFORM_VERSION)-*  || \
+      sudo apt-get install -y terraform
+
+      echo "=== Step 7: Verify installation ==="
+      terraform version
+
+      echo "=== Step 8: Terraform installed successfully ==="
+
+    displayName: "Install Terraform"
+
+  - bash: |
+      echo "=== Terraform Version Check ==="
+      terraform version
+
+      echo "=== Terraform Help ==="
+      terraform --help
+
+    displayName: "Verify Terraform"
