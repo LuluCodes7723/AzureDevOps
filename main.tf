@@ -1,4 +1,3 @@
-
 terraform {
   required_providers {
     azurerm = {
@@ -10,11 +9,12 @@ terraform {
 
 provider "azurerm" {
   features {}
+  subscription_id = "4b3a384b-b36e-407d-a447-5f12eb4e7442"
 }
 
 # Resource Group
 resource "azurerm_resource_group" "rg" {
-  name     = "rg-blob-storage"
+  name     = "DevopsProject"
   location = "East US"
 }
 
